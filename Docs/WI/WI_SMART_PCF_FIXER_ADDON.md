@@ -1377,7 +1377,7 @@ Add to the Data Table tab's column list:
     const colors = tierColors[row.fixingActionTier] || tierColors[3];
 
     return (
-      <div style={{
+      <div style={ {
         background: colors.bg,
         color: colors.text,
         borderLeft: `3px solid ${colors.border}`,
@@ -1387,8 +1387,8 @@ Add to the Data Table tab's column list:
         lineHeight: 1.4,
         whiteSpace: "pre-wrap",
         maxWidth: 320,
-      }}>
-        <span style={{
+      } }>
+        <span style={ {
           display: "inline-block",
           background: colors.border,
           color: "white",
@@ -1397,7 +1397,7 @@ Add to the Data Table tab's column list:
           fontSize: "0.6rem",
           fontWeight: 700,
           marginBottom: 2,
-        }}>
+        } }>
           {colors.label} T{row.fixingActionTier}
         </span>
         {" "}{row.fixingActionRuleId}
@@ -1420,7 +1420,7 @@ Add to the Data Table tab's column list:
     dispatch({ type: "SMART_FIX_COMPLETE", payload: result });
   }}
   disabled={!state.dataTable.length || state.smartFix.status === "running"}
-  style={{ /* industrial blue button styling */ }}
+  style={ { /* industrial blue button styling */ } }
 >
   {state.smartFix.status === "running" ? "Analyzing..." : "Smart Fix 🔧"}
 </button>
@@ -1434,7 +1434,7 @@ Add to the Data Table tab's column list:
     // After applying: trigger Steps 5-13 (coordinate recalc, CP/BP, pointers, etc.)
   }}
   disabled={state.smartFix.status !== "previewing"}
-  style={{ /* green button styling when enabled */ }}
+  style={ { /* green button styling when enabled */ } }
 >
   {state.smartFix.status === "applying" ? "Applying..." : "Apply Fixes ✓"}
 </button>
@@ -1481,22 +1481,22 @@ Add a collapsible section to the Debug tab:
 ```javascript
 // Smart Fix Summary (shown after Smart Fix completes)
 {state.smartFix.chainSummary && (
-  <div style={{ background: "#F0F4F8", padding: 12, borderRadius: 6, marginBottom: 12 }}>
+  <div style={ { background: "#F0F4F8", padding: 12, borderRadius: 6, marginBottom: 12 } }>
     <h4>Smart Fix Summary</h4>
     <table>
       <tbody>
         <tr><td>Chains found</td><td>{state.smartFix.chainSummary.chainCount}</td></tr>
         <tr><td>Elements walked</td><td>{state.smartFix.chainSummary.elementsWalked}</td></tr>
         <tr><td>Orphan elements</td><td>{state.smartFix.chainSummary.orphanCount}</td></tr>
-        <tr style={{borderTop:"1px solid #ccc"}}><td>Tier 1 (auto-silent)</td>
-            <td style={{color:"#28A745"}}>{state.smartFix.chainSummary.tier1}</td></tr>
+        <tr style={ {borderTop:"1px solid #ccc"} }><td>Tier 1 (auto-silent)</td>
+            <td style={ {color:"#28A745"} }>{state.smartFix.chainSummary.tier1}</td></tr>
         <tr><td>Tier 2 (auto-logged)</td>
-            <td style={{color:"#FFC107"}}>{state.smartFix.chainSummary.tier2}</td></tr>
+            <td style={ {color:"#FFC107"} }>{state.smartFix.chainSummary.tier2}</td></tr>
         <tr><td>Tier 3 (warnings)</td>
-            <td style={{color:"#FD7E14"}}>{state.smartFix.chainSummary.tier3}</td></tr>
+            <td style={ {color:"#FD7E14"} }>{state.smartFix.chainSummary.tier3}</td></tr>
         <tr><td>Tier 4 (errors)</td>
-            <td style={{color:"#DC3545"}}>{state.smartFix.chainSummary.tier4}</td></tr>
-        <tr style={{borderTop:"1px solid #ccc"}}><td>Rows with proposed fixes</td>
+            <td style={ {color:"#DC3545"} }>{state.smartFix.chainSummary.tier4}</td></tr>
+        <tr style={ {borderTop:"1px solid #ccc"} }><td>Rows with proposed fixes</td>
             <td><b>{state.smartFix.chainSummary.rowsWithActions}</b></td></tr>
       </tbody>
     </table>

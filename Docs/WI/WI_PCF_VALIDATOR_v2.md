@@ -776,7 +776,7 @@ function RuleCoveragePanel({ ruleRegistry }) {
     <div>
       <h3>Rule Coverage: {implemented.length}/{rules.length} implemented</h3>
       {missing.length > 0 && (
-        <div style={{background:"#F8D7DA", padding:8, borderRadius:4}}>
+        <div style={ {background:"#F8D7DA", padding:8, borderRadius:4} }>
           <strong>MISSING RULES:</strong>
           {missing.map(([id, r]) => <div key={id}>✗ {id}: {r.name}</div>)}
         </div>
@@ -784,10 +784,10 @@ function RuleCoveragePanel({ ruleRegistry }) {
       <h4>Executed this session: {executed.length}/{implemented.length}</h4>
       <table>
         {rules.map(([id, r]) => (
-          <tr key={id} style={{
+          <tr key={id} style={ {
             background: !r.implemented ? "#F8D7DA" : 
                         (r.executionCount || 0) === 0 ? "#FFF3CD" : "white"
-          }}>
+          } }>
             <td>{id}</td>
             <td>{r.name}</td>
             <td>{r.implemented ? "✓" : "✗"}</td>
