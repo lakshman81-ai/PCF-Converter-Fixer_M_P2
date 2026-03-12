@@ -5,8 +5,10 @@ import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
 import { runSmartFix } from './engine/Orchestrator.js';
+import { parsePcf } from './engine/Parser.js';
 import { runValidationChecklist as runValidation } from './engine/Validator.js';
 import { applyFixes } from './engine/FixApplicator.js';
+import { Viewer3D } from './engine/Viewer3D.jsx';
 
 // ----------------------------------------------------------------------------
 // 1. CONSTANTS & CONFIGURATION
@@ -138,12 +140,6 @@ function isValidCoord(c) {
 // Format number utility
 const fmtCoordStr = (c, dec = 4) => (c && c.x != null && c.y != null && c.z != null) ? `${Number(c.x).toFixed(dec)}, ${Number(c.y).toFixed(dec)}, ${Number(c.z).toFixed(dec)}` : '';
 const fmtCoord = (c) => fmtCoordStr(c, 4);
-
-// ----------------------------------------------------------------------------
-// SMART FIXER — CHAIN WALKER ENGINE
-
-  return results;
-}
 
 // ----------------------------------------------------------------------------
 // 5. GENERATOR & EXPORT
@@ -595,7 +591,13 @@ export default function App() {
     const tableCopy = JSON.parse(JSON.stringify(dataTable));
     const runLog = [...log];
 
-    const result = applyFixes(tableCopy, state.smartFix.chains, config, runLog);
+    // Only apply fixes that are approved
+    const filteredChains = state.smartFix.chains.map(chain => {
+       const filteredFixes = chain.fixes.filter(f => f.approved !== false);
+       return { ...chain, fixes: filteredFixes };
+    });
+
+    const result = applyFixes(tableCopy, filteredChains, config, runLog);
 
     // Rerun validations since we modified the table
     const vResults = runValidation(result.updatedTable, config, runLog);
@@ -625,6 +627,18 @@ export default function App() {
         status: `Fixes Applied! ${result.applied.length} fixes executed. Validation: ${vResults.filter(r=>r.severity==='ERROR').length} errors.`
       }
     });
+  };
+
+  const handleApproveFix = (chainIdx, fixIdx, approved) => {
+    dispatch({ type: 'TOGGLE_FIX_APPROVAL', payload: { chainIdx, fixIdx, approved } });
+  };
+
+  const handleAutoApproveFirstPass = () => {
+    dispatch({ type: 'AUTO_APPROVE_FIRST_PASS' });
+  };
+
+  const handleApproveAll = () => {
+      dispatch({ type: 'APPROVE_ALL_FIXES' });
   };
 
   const exportExcel = async () => {
@@ -785,6 +799,16 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden relative">
+        {activeTab === '3dview' && (
+          <div className="h-full overflow-hidden bg-white text-black">
+              {dataTable.length === 0 ? (
+                 <div className="flex h-full items-center justify-center text-gray-400">Import a file to populate the 3D viewer.</div>
+              ) : (
+                 <Viewer3D dataTable={dataTable} smartFix={state.smartFix} dispatch={dispatch} />
+              )}
+          </div>
+        )}
+
         {activeTab === 'datatable' && (
           <div className="h-full overflow-auto bg-white text-black p-4">
              {dataTable.length === 0 ? (
@@ -858,7 +882,29 @@ export default function App() {
                      };
                      const getTitle = (field) => r._modified[field] ? `[${r._modified[field]}] modified` : '';
 
-                     const renderFixingAction = (val, tier, ruleId) => {
+                     let actionText = r.fixingAction;
+                     let tier = r.fixingActionTier;
+                     let ruleId = r.fixingActionRuleId;
+                     let chainIdx, fixIdx, approved;
+
+                     if (state.smartFix.chains && state.smartFix.chains.length > 0) {
+                         state.smartFix.chains.forEach((chain, cIdx) => {
+                             if (chain.fixes) {
+                                 chain.fixes.forEach((f, fIdx) => {
+                                     if (f.element && f.element._rowIndex === r._rowIndex) {
+                                         actionText = f.message;
+                                         tier = f.tier;
+                                         ruleId = f.ruleId;
+                                         chainIdx = cIdx;
+                                         fixIdx = fIdx;
+                                         approved = f.approved;
+                                     }
+                                 });
+                             }
+                         });
+                     }
+
+                     const renderFixingAction = (val, tier, ruleId, chainIdx, fixIdx, approved) => {
                        if (!val) return <span className="text-gray-400">—</span>;
                        const tierColors = {
                          1: { bg: "#D4EDDA", text: "#155724", border: "#28A745", label: "AUTO" },
@@ -866,7 +912,14 @@ export default function App() {
                          3: { bg: "#FFE5D0", text: "#856404", border: "#FD7E14", label: "REVIEW" },
                          4: { bg: "#F8D7DA", text: "#721C24", border: "#DC3545", label: "ERROR" },
                        };
-                       const colors = tierColors[tier] || tierColors[3];
+                       const colors = { ...tierColors[tier] || tierColors[3] };
+
+                       if (approved === true) {
+                           colors.bg = "#28A745"; colors.text = "#FFFFFF"; colors.border = "#28A745";
+                       } else if (approved === false) {
+                           colors.bg = "#DC3545"; colors.text = "#FFFFFF"; colors.border = "#DC3545";
+                       }
+
                        return (
                          <div style={{
                            background: colors.bg, color: colors.text, borderLeft: `3px solid ${colors.border}`,
@@ -882,6 +935,13 @@ export default function App() {
                            {" "}{ruleId}
                            <br/>
                            {val}
+
+                           {chainIdx !== undefined && fixIdx !== undefined && state.smartFix.status !== 'applied' && (
+                               <div className="flex gap-2 mt-2">
+                                   <button onClick={() => handleApproveFix(chainIdx, fixIdx, true)} className={`px-2 py-0.5 text-[10px] rounded ${approved === true ? 'bg-green-600 text-white' : 'bg-gray-200 text-black hover:bg-green-200'}`}>Approve</button>
+                                   <button onClick={() => handleApproveFix(chainIdx, fixIdx, false)} className={`px-2 py-0.5 text-[10px] rounded ${approved === false ? 'bg-red-600 text-white' : 'bg-gray-200 text-black hover:bg-red-200'}`}>Reject</button>
+                               </div>
+                           )}
                          </div>
                        );
                      };
@@ -894,7 +954,7 @@ export default function App() {
                          <td className={`p-2 border border-gray-300 truncate max-w-[200px] ${getBg('text')}`} title={r.text}>{r.text}</td>
 
                          <td className="p-2 border border-gray-300 bg-blue-50 align-top">
-                           {renderFixingAction(r.fixingAction, r.fixingActionTier, r.fixingActionRuleId)}
+                           {renderFixingAction(actionText, tier, ruleId, chainIdx, fixIdx, approved)}
                          </td>
 
                          <td className={`p-2 border border-gray-300 ${getBg('pipelineRef')}`}>{r.pipelineRef}</td>
@@ -1228,6 +1288,13 @@ export default function App() {
             className="disabled:opacity-50 bg-[#0077B6] hover:bg-blue-600 text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors"
           >
             {state.smartFix.status === "running" ? "Analyzing..." : "Smart Fix 🔧"}
+          </button>
+          <button
+            onClick={handleApproveAll}
+            disabled={state.smartFix.status !== "previewing"}
+            className="disabled:opacity-50 bg-[#17A2B8] hover:bg-[#138496] text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors"
+          >
+            Approve All
           </button>
           <button
             onClick={handleApplyFixes}
