@@ -757,39 +757,40 @@ export default function App() {
     <div className="flex flex-col h-screen bg-[#1A1D23] text-gray-200 font-sans text-sm">
       <ExcelPreviewModal />
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#111317] border-b border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#111317] border-b border-gray-800 text-white">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold text-white flex items-center gap-2">
+            <h1 className="text-lg font-bold flex items-center gap-2">
             <Activity className="w-5 h-5 text-[#0077B6]" />
             PCF Validator & Fixer
           </h1>
           <div className="flex gap-2">
-             <label className="cursor-pointer bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded flex items-center gap-2 transition-colors">
+               <label className="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded flex items-center gap-2 transition-colors shadow">
                 <Upload className="w-4 h-4" /> Import PCF
                 <input type="file" accept=".pcf,.txt" className="hidden" onChange={handleImportPcf} />
              </label>
-             <label className="cursor-pointer bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded flex items-center gap-2 transition-colors">
+               <label className="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded flex items-center gap-2 transition-colors shadow">
                 <FileSpreadsheet className="w-4 h-4" /> Import Excel/CSV
                 <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportExcel} />
              </label>
           </div>
         </div>
-        <div className="text-xs text-gray-500">ver.10-03-26 time 09:00</div>
+          <div className="text-xs text-gray-400 font-mono">ver.10-03-26 time 09:00</div>
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-[#111317] px-4 border-b border-gray-800">
+      <div className="flex bg-[#111317] px-4 border-b border-gray-800 pt-2">
         {[
           { id: 'datatable', label: 'Data Table', icon: FileSpreadsheet },
+          { id: 'debug', label: 'Core processor', icon: AlertCircle },
           { id: 'config', label: 'Config', icon: Settings },
-          { id: 'debug', label: 'Debug', icon: AlertCircle },
-          { id: 'output', label: 'Output', icon: FileText }
+          { id: 'output', label: 'Output', icon: FileText },
+          { id: '3dview', label: '3D Viewer', icon: Activity }
         ].map(t => (
           <button
             key={t.id}
             onClick={() => dispatch({ type: 'SET_TAB', payload: t.id })}
-            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-              activeTab === t.id ? 'border-[#0077B6] text-white' : 'border-transparent text-gray-400 hover:text-gray-200'
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors bg-[#111317] hover:bg-[#1a1d24] ${
+              activeTab === t.id ? 'border-[#0077B6] text-white bg-[#1a1d24]' : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
           >
             <t.icon className="w-4 h-4" /> {t.label}
@@ -1270,39 +1271,56 @@ export default function App() {
       </div>
 
       {/* Footer / Status Bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#111317] border-t border-gray-800 text-xs">
-        <div className="text-gray-400">{status}</div>
+      <div className="flex items-center justify-between px-4 py-2 bg-[#111317] border-t border-gray-800 text-xs mt-auto">
+        <div className="text-gray-400 font-mono">{status}</div>
         <div className="flex items-center gap-3">
-          <button onClick={exportExcel} disabled={dataTable.length === 0} className="disabled:opacity-50 text-gray-300 hover:text-white flex items-center gap-1 transition-colors">
+          <button onClick={exportExcel} disabled={dataTable.length === 0} className="disabled:opacity-50 text-gray-300 hover:text-white flex items-center gap-1 transition-colors px-2">
             <Download className="w-4 h-4" /> Export Data Table
           </button>
-          <button onClick={exportPcf} disabled={!finalPcf} className="disabled:opacity-50 text-gray-300 hover:text-white flex items-center gap-1 transition-colors">
+          <button onClick={exportPcf} disabled={!finalPcf} className="disabled:opacity-50 text-gray-300 hover:text-white flex items-center gap-1 transition-colors px-2">
             <Download className="w-4 h-4" /> Export PCF
           </button>
-          <button onClick={runBasicFixer} disabled={dataTable.length === 0} className="disabled:opacity-50 text-gray-300 hover:text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors">
-            <Play className="w-4 h-4 fill-current" /> Run Validator
-          </button>
-          <button
-            onClick={handleSmartFix}
-            disabled={dataTable.length === 0 || state.smartFix.status === "running"}
-            className="disabled:opacity-50 bg-[#0077B6] hover:bg-blue-600 text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors"
-          >
-            {state.smartFix.status === "running" ? "Analyzing..." : "Smart Fix 🔧"}
-          </button>
-          <button
-            onClick={handleApproveAll}
-            disabled={state.smartFix.status !== "previewing"}
-            className="disabled:opacity-50 bg-[#17A2B8] hover:bg-[#138496] text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors"
-          >
-            Approve All
-          </button>
-          <button
-            onClick={handleApplyFixes}
-            disabled={state.smartFix.status !== "previewing"}
-            className="disabled:opacity-50 bg-[#28A745] hover:bg-green-600 text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors"
-          >
-            {state.smartFix.status === "applying" ? "Applying..." : "Apply Fixes ✓"}
-          </button>
+
+          {state.smartFix.status === "previewing" && (
+            <div className="flex gap-2 mr-4 ml-4">
+                <span className="text-gray-400 my-auto text-[10px] bg-gray-800 px-2 py-1 rounded">
+                    Fixing Action:
+                    <span className="text-green-400 ml-1">Approved({state.smartFix.chains.reduce((sum, chain) => sum + chain.fixes.filter(f => f.approved === true).length, 0)})</span>,
+                    <span className="text-red-400 ml-1">Reject({state.smartFix.chains.reduce((sum, chain) => sum + chain.fixes.filter(f => f.approved === false).length, 0)})</span>,
+                    <span className="text-yellow-400 ml-1">Pending({state.smartFix.chains.reduce((sum, chain) => sum + chain.fixes.filter(f => f.approved === undefined).length, 0)})</span>
+                </span>
+                <button onClick={handleAutoApproveFirstPass} className="bg-[#17A2B8] hover:bg-[#138496] text-white px-3 py-1.5 rounded flex items-center gap-2 text-xs font-bold transition-colors shadow">
+                  Auto Approve First Pass (&lt; 25mm)
+                </button>
+            </div>
+          )}
+
+          <div className="flex gap-2 border-l border-gray-700 pl-3">
+              <button onClick={runBasicFixer} disabled={dataTable.length === 0} className="disabled:opacity-50 bg-gray-700 text-white hover:bg-gray-600 px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors shadow">
+                <Play className="w-4 h-4 fill-current" /> Run Validator
+              </button>
+              <button
+                onClick={handleSmartFix}
+                disabled={dataTable.length === 0 || state.smartFix.status === "running"}
+                className="disabled:opacity-50 bg-[#0077B6] hover:bg-[#005f92] text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors shadow"
+              >
+                {state.smartFix.status === "running" ? "Analyzing..." : "Smart Fix 🔧"}
+              </button>
+              <button
+                onClick={handleApproveAll}
+                disabled={state.smartFix.status !== "previewing"}
+                className="disabled:opacity-50 bg-[#17A2B8] hover:bg-[#138496] text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors shadow"
+              >
+                Approve All
+              </button>
+              <button
+                onClick={handleApplyFixes}
+                disabled={state.smartFix.status !== "previewing"}
+                className="disabled:opacity-50 bg-[#28A745] hover:bg-[#218838] text-white px-3 py-1.5 rounded flex items-center gap-2 font-bold transition-colors shadow"
+              >
+                {state.smartFix.status === "applying" ? "Applying..." : "Apply Fixes ✓"}
+              </button>
+          </div>
         </div>
       </div>
     </div>
